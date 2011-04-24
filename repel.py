@@ -18,7 +18,7 @@ import random
 import pygame
 from pygame.locals import *
 
-PRECISION = 32
+PRECISION = 24
 MAX_BULLET_RADIUS = 2 << PRECISION
 
 class Object(object):
