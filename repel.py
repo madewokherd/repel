@@ -38,6 +38,7 @@ class Player(Object):
 
 class Bullet(Object):
     radius = 2 << PRECISION
+    dead = False
     
     pull = 1 << PRECISION
 
@@ -53,6 +54,12 @@ class World(object):
         self.random = random.Random()
         
     def advance(self):
+        # destroy any out of range or used bullets
+        for i in range(len(self.bullets)-1, -1, -1):
+            bullet = self.bullets[i]
+            if bulllet.dead or bullet.x < 0 or bullet.y < 0 or bullet.x > self.width or bullet.y > self.height:
+                self.bullets.pop(i)
+
         # check for collisions
         
         # move all the bullets
@@ -90,6 +97,8 @@ def draw_world(world, surface, x, y, w, h):
         pygame.draw.circle(surface, color, (px, py), pr)
     
     for bullet in world.bullets:
+        if bullet.dead:
+            continue
         bx = bullet.x * w // world.width + x
         by = bullet.y * h // world.height + y
         br = bullet.radius * w // world.width
