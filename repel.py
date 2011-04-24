@@ -46,7 +46,7 @@ class Object(object):
 class Player(Object):
     radius = 16 << PRECISION
     
-    pull = 8 << PRECISION
+    pull = 12 << PRECISION
 
 class Bullet(Object):
     radius = 2 << PRECISION
