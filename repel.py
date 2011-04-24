@@ -113,6 +113,8 @@ def run(world, player, x, y, w, h):
         for event in pygame.event.get():
             if event.type == QUIT:
                 return
+            elif event.type == KEYDOWN and event.key == K_ESCAPE:
+                return
             elif event.type == MOUSEMOTION:
                 player.x = event.pos[0] << PRECISION
                 player.y = event.pos[1] << PRECISION
