@@ -103,39 +103,63 @@ def run(world, player, x, y, w, h):
     screen = pygame.display.get_surface()
     clock = pygame.time.Clock()
     frame = 0
+    paused = False
 
     pygame.mouse.set_visible(False)
 
     while True:
-        clock.tick(60)
-        frame += 1
+        if not paused:
+            clock.tick(60)
+            frame += 1
         
-        for event in pygame.event.get():
+        events = pygame.event.get()
+        
+        if paused and not events:
+            events = [pygame.event.wait()]
+        
+        for event in events:
             if event.type == QUIT:
                 return
-            elif event.type == KEYDOWN and event.key == K_ESCAPE:
-                return
+            elif event.type == KEYDOWN:
+                if event.key == K_ESCAPE:
+                    return
+                elif event.key == K_PAUSE or event.key == K_p:
+                    paused = not paused
+            elif paused:
+                continue
             elif event.type == MOUSEMOTION:
                 player.x = event.pos[0] << PRECISION
                 player.y = event.pos[1] << PRECISION
             elif event.type == MOUSEBUTTONDOWN and event.button == 1:
                 player.pull = -player.pull
         
-        if frame % 20 == 0:
-            bullet = Bullet()
-            bullet.x = world.random.randint(0, w - 1) << PRECISION
-            bullet.y = world.random.randint(0, h - 1) << PRECISION
-            if world.random.randint(0,1) == 1:
-                bullet.pull = -bullet.pull
-            world.bullets.append(bullet)
-        
-        world.advance()
+        if not paused:
+            if frame % 20 == 0:
+                bullet = Bullet()
+                bullet.x = world.random.randint(0, w - 1) << PRECISION
+                bullet.y = world.random.randint(0, h - 1) << PRECISION
+                if world.random.randint(0,1) == 1:
+                    bullet.pull = -bullet.pull
+                world.bullets.append(bullet)
+            
+            world.advance()
+
         draw_world(world, screen, x, y, w, h)
+
+        if paused:
+            if pygame.font:
+                font = pygame.font.Font(None, 48)
+                text = font.render("Paused", 1, Color(240, 240, 240, 255))
+                textpos = text.get_rect(centerx=x+w//2, centery=y+h//2)
+                screen.blit(text, textpos)
+
         pygame.display.flip()
 
 def main():
     width = 640
     height = 640
+
+    pygame.init()
 
     pygame.display.set_mode((width, height))
     
