@@ -83,13 +83,21 @@ def draw_world(world, surface, x, y, w, h):
         px = player.x * w // world.width + x
         py = player.y * h // world.height + y
         pr = player.radius * w // world.width
-        pygame.draw.circle(surface, Color(255,0,0,255), (px, py), pr)
+        if player.pull > 0:
+            color = Color(255,0,0,255)
+        else:
+            color = Color(0,0,255,255)
+        pygame.draw.circle(surface, color, (px, py), pr)
     
     for bullet in world.bullets:
         bx = bullet.x * w // world.width + x
         by = bullet.y * h // world.height + y
         br = bullet.radius * w // world.width
-        pygame.draw.circle(surface, Color(255,128,128,255), (bx, by), br)
+        if bullet.pull > 0:
+            color = Color(255,128,128,255)
+        else:
+            color = Color(128,128,255,255)
+        pygame.draw.circle(surface, color, (bx, by), br)
 
 def run(world, player, x, y, w, h):
     screen = pygame.display.get_surface()
@@ -108,11 +116,15 @@ def run(world, player, x, y, w, h):
             elif event.type == MOUSEMOTION:
                 player.x = event.pos[0] << PRECISION
                 player.y = event.pos[1] << PRECISION
+            elif event.type == MOUSEBUTTONDOWN and event.button == 1:
+                player.pull = -player.pull
         
         if frame % 20 == 0:
             bullet = Bullet()
             bullet.x = world.random.randint(0, w - 1) << PRECISION
             bullet.y = world.random.randint(0, h - 1) << PRECISION
+            if world.random.randint(0,1) == 1:
+                bullet.pull = -bullet.pull
             world.bullets.append(bullet)
         
         world.advance()
