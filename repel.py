@@ -76,12 +76,12 @@ class World(object):
         # search for any bullet with x in range
         while max_index > min_index:
             index = (max_index + min_index) // 2
-            
-            if min_x < self.bullets[index].x < max_x:
-                break
-            elif min_x > self.bullets[index].x:
+
+            if min_x >= self.bullets[index].x:
                 min_index = index + 1
-            elif max_x < self.bullets[index].x:
+            elif self.bullets[index].x < max_x: # and self.bullets[index]x > min_x
+                break
+            else: # max_x <= self.bullets[index].x
                 max_index = index - 1
         else:
             # nothing with x in range
