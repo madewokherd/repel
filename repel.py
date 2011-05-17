@@ -173,6 +173,12 @@ def draw_world(world, surface, x, y, w, h):
             color = Color(128,128,255,255)
         pygame.draw.circle(surface, color, (bx, by), br)
 
+def is_next_to_player(world, x, y):
+    for player in world.players:
+        if (x - player.x)**2 + (y-player.y)**2 < (100 << PRECISION) ** 2:
+            return True
+    return False
+
 def run(world, player, x, y, w, h):
     screen = pygame.display.get_surface()
     clock = pygame.time.Clock()
@@ -212,6 +218,9 @@ def run(world, player, x, y, w, h):
                 bullet = Bullet()
                 bullet.x = world.random.randint(0, w - 1) << PRECISION
                 bullet.y = world.random.randint(0, h - 1) << PRECISION
+                while is_next_to_player(world, bullet.x, bullet.y):
+                    bullet.x = world.random.randint(0, w - 1) << PRECISION
+                    bullet.y = world.random.randint(0, h - 1) << PRECISION
                 if world.random.randint(0,1) == 1:
                     bullet.pull = -bullet.pull
                 world.bullets.append(bullet)
