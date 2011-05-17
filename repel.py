@@ -53,6 +53,9 @@ class Bullet(Object):
     
     pull = 1 << PRECISION
 
+class Baddie(Object):
+    radius = 24 << PRECISION
+
 class World(object):
     def __init__(self, width, height):
         self.bullets = []
@@ -120,12 +123,30 @@ class World(object):
             if bullet is not None:
                 player.dead = True
                 bullet.dead = True
-        
+                
+        for baddie in self.baddies:
+            bullet = self.find_bullet(baddie)
+            
+            if bullet is not None:
+                baddie.dead = True
+                bullet.dead = True
+            else:
+                for player in self.players:
+                    if baddie.intersects(player):
+                        baddie.dead = True
+                        player.dead = True
+                        break
+
         # destroy any dead players/baddies
         for i in range(len(self.players)-1, -1, -1):
             player = self.players[i]
             if player.dead:
                 self.players.pop(i)
+
+        for i in range(len(self.baddies)-1, -1, -1):
+            baddie = self.baddies[i]
+            if baddie.dead:
+                self.baddies.pop(i)
 
         # move all the bullets
         for player in self.players:
@@ -171,6 +192,15 @@ def draw_world(world, surface, x, y, w, h):
             color = Color(255,128,128,255)
         else:
             color = Color(128,128,255,255)
+        pygame.draw.circle(surface, color, (bx, by), br)
+    
+    for baddie in world.baddies:
+        if baddie.dead:
+            continue
+        bx = baddie.x * w // world.width + x
+        by = baddie.y * h // world.height + y
+        br = baddie.radius * w // world.width
+        color = Color(162,162,162,255)
         pygame.draw.circle(surface, color, (bx, by), br)
 
 def is_next_to_player(world, x, y):
@@ -224,6 +254,15 @@ def run(world, player, x, y, w, h):
                 if world.random.randint(0,1) == 1:
                     bullet.pull = -bullet.pull
                 world.bullets.append(bullet)
+
+            if frame % 200 == 0:
+                baddie = Baddie()
+                baddie.x = world.random.randint(0, w - 1) << PRECISION
+                baddie.y = world.random.randint(0, h - 1) << PRECISION
+                while is_next_to_player(world, baddie.x, baddie.y):
+                    baddie.x = world.random.randint(0, w - 1) << PRECISION
+                    baddie.y = world.random.randint(0, h - 1) << PRECISION
+                world.baddies.append(baddie)
             
             world.advance()
 
