@@ -288,6 +288,7 @@ def run(world, player, x, y, w, h):
     clock = pygame.time.Clock()
     frame = 0
     paused = False
+    time_dead = 0
 
     pygame.mouse.set_visible(False)
 
@@ -300,6 +301,13 @@ def run(world, player, x, y, w, h):
         
         if paused and not events:
             events = [pygame.event.wait()]
+        
+        if player.dead:
+            time_dead += 1
+            if time_dead == 250:
+                time_dead = 0
+                player.dead = False
+                world.players.append(player)
         
         for event in events:
             if event.type == QUIT:
