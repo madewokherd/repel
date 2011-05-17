@@ -77,7 +77,7 @@ class World(object):
         max_x = obj.x + max_distance
         
         # search for any bullet with x in range
-        while max_index > min_index:
+        while max_index >= min_index:
             index = (max_index + min_index) // 2
 
             if min_x >= self.bullets[index].x:
