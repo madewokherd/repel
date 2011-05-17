@@ -21,6 +21,32 @@ from pygame.locals import *
 PRECISION = 24
 MAX_BULLET_RADIUS = 2 << PRECISION
 
+def isqrt(n):
+    if n < 0:
+        raise ValueError("isqrt() is only valid for positive numbers")
+    
+    result = 0
+    
+    # find the closest power of 2
+    to_add = n
+    while True:
+        next_to_add = to_add & (to_add - 1)
+        if next_to_add == 0:
+            break
+        else:
+            to_add = next_to_add
+    
+    while to_add != 0:
+        next_result = result+to_add
+        next_square = next_result * next_result
+        if next_square < n:
+            result = next_result
+        elif next_square == n:
+            return next_result
+        to_add = to_add >> 1
+    
+    return result
+
 class Object(object):
     x = 0
     y = 0
@@ -55,6 +81,50 @@ class Bullet(Object):
 
 class Baddie(Object):
     radius = 24 << PRECISION
+    
+    def move(self, world):
+        pass
+
+    def shoot_direction(self, world, dx, dy):
+        bullet = Bullet()
+        bullet.dx = dx
+        bullet.dy = dy
+        distance = self.radius + bullet.radius
+        
+        speed = isqrt(dx*dx + dy*dy)
+        
+        x_distance = distance * dx / speed + cmp(dx, 0)
+        y_distance = distance * dy / speed + cmp(dy, 0)
+
+        bullet.x = self.x + x_distance
+        bullet.y = self.y + y_distance
+
+        world.bullets.append(bullet)
+
+        return bullet
+
+    def shoot_point(self, world, x, y, speed):
+        dx = x - self.x
+        dy = y - self.y
+
+        distance = isqrt(dx*dx + dy*dy)
+
+        dx = dx * speed / distance
+        dy = dy * speed / distance
+
+        return self.shoot_direction(world, dx, dy)
+
+class ShootyBaddie(Baddie):
+    age = 0
+
+    def move(self, world):
+        self.age += 1
+        
+        if self.age % 60 == 0 and world.players:
+            player = world.random.choice(world.players)
+            bullet = self.shoot_point(world, player.x, player.y, 5 << PRECISION)
+            bullet.pull = -bullet.pull
+            bullet = self.shoot_point(world, player.x, player.y, 5 << PRECISION)
 
 class World(object):
     def __init__(self, width, height):
@@ -113,6 +183,10 @@ class World(object):
             bullet = self.bullets[i]
             if bullet.dead or bullet.x < 0 or bullet.y < 0 or bullet.x > self.width or bullet.y > self.height:
                 self.bullets.pop(i)
+
+        # move all baddies (including shooting)
+        for baddie in self.baddies:
+            baddie.move(self)
 
         # check for collisions
         self.bullets.sort(key=Object.sort_key)
@@ -244,19 +318,8 @@ def run(world, player, x, y, w, h):
                 player.pull = -player.pull
         
         if not paused:
-            if frame % 20 == 0:
-                bullet = Bullet()
-                bullet.x = world.random.randint(0, w - 1) << PRECISION
-                bullet.y = world.random.randint(0, h - 1) << PRECISION
-                while is_next_to_player(world, bullet.x, bullet.y):
-                    bullet.x = world.random.randint(0, w - 1) << PRECISION
-                    bullet.y = world.random.randint(0, h - 1) << PRECISION
-                if world.random.randint(0,1) == 1:
-                    bullet.pull = -bullet.pull
-                world.bullets.append(bullet)
-
             if frame % 200 == 0:
-                baddie = Baddie()
+                baddie = ShootyBaddie()
                 baddie.x = world.random.randint(0, w - 1) << PRECISION
                 baddie.y = world.random.randint(0, h - 1) << PRECISION
                 while is_next_to_player(world, baddie.x, baddie.y):
