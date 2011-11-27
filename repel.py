@@ -21,6 +21,8 @@ from pygame.locals import *
 PRECISION = 24
 MAX_BULLET_RADIUS = 2 << PRECISION
 
+TRAIL_SIZE = 5
+
 def isqrt(n):
     if n < 0:
         raise ValueError("isqrt() is only valid for positive numbers")
@@ -78,6 +80,9 @@ class Bullet(Object):
     radius = 2 << PRECISION
     
     pull = 1 << PRECISION
+
+    def __init__(self):
+        self.prev_positions = []
 
 class Baddie(Object):
     radius = 24 << PRECISION
@@ -236,6 +241,9 @@ class World(object):
                 bullet.dy += ay
 
         for bullet in self.bullets:
+            bullet.prev_positions.append((bullet.x, bullet.y))
+            if len(bullet.prev_positions) > TRAIL_SIZE:
+                bullet.prev_positions.pop(0)
             bullet.x += bullet.dx
             bullet.y += bullet.dy
         
@@ -259,13 +267,25 @@ def draw_world(world, surface, x, y, w, h):
     for bullet in world.bullets:
         if bullet.dead:
             continue
-        bx = bullet.x * w // world.width + x
-        by = bullet.y * h // world.height + y
-        br = bullet.radius * w // world.width
         if bullet.pull > 0:
             color = Color(255,128,128,255)
         else:
             color = Color(128,128,255,255)
+        for i in range(len(bullet.prev_positions)):
+            x1, y1 = bullet.prev_positions[i]
+            if i == len(bullet.prev_positions) - 1:
+                x2 = bullet.x
+                y2 = bullet.y
+            else:
+                x2, y2 = bullet.prev_positions[i+1]
+            x1 = x1 * w // world.width + x
+            y1 = y1 * h // world.height + y
+            x2 = x2 * w // world.width + x
+            y2 = y2 * h // world.height + y
+            pygame.draw.line(surface, color, (x1, y1), (x2, y2))
+        bx = bullet.x * w // world.width + x
+        by = bullet.y * h // world.height + y
+        br = bullet.radius * w // world.width
         pygame.draw.circle(surface, color, (bx, by), br)
     
     for baddie in world.baddies:
