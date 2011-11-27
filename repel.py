@@ -86,9 +86,11 @@ class Bullet(Object):
 
 class Baddie(Object):
     radius = 24 << PRECISION
+    spawn_time = 0
+    age = 0
     
     def move(self, world):
-        pass
+        self.age += 1
 
     def shoot_direction(self, world, dx, dy):
         bullet = Bullet()
@@ -120,10 +122,13 @@ class Baddie(Object):
         return self.shoot_direction(world, dx, dy)
 
 class ShootyBaddie(Baddie):
-    age = 0
+    spawn_time = 30
 
     def move(self, world):
-        self.age += 1
+        Baddie.move(self, world)
+        
+        if self.age < self.spawn_time:
+            return
         
         if self.age % 60 == 0 and world.players:
             player = world.random.choice(world.players)
@@ -204,6 +209,8 @@ class World(object):
                 bullet.dead = True
                 
         for baddie in self.baddies:
+            if baddie.spawn_time > baddie.age:
+                continue
             bullet = self.find_bullet(baddie)
             
             if bullet is not None:
@@ -291,10 +298,15 @@ def draw_world(world, surface, x, y, w, h):
     for baddie in world.baddies:
         if baddie.dead:
             continue
+        if baddie.spawn_time > baddie.age:
+            opacity = 255 * baddie.age // baddie.spawn_time
+        else:
+            opacity = 255
+        base_r = base_g = base_b = 162
         bx = baddie.x * w // world.width + x
         by = baddie.y * h // world.height + y
         br = baddie.radius * w // world.width
-        color = Color(162,162,162,255)
+        color = Color(base_r*opacity/255,base_g*opacity/255,base_b*opacity/255,255)
         pygame.draw.circle(surface, color, (bx, by), br)
 
 def is_next_to_player(world, x, y):
