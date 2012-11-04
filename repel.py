@@ -88,6 +88,7 @@ class Baddie(Object):
     radius = 24 << PRECISION
     spawn_time = 0
     age = 0
+    score = 1
     
     def move(self, world):
         self.age += 1
@@ -123,6 +124,7 @@ class Baddie(Object):
 
 class ShootyBaddie(Baddie):
     spawn_time = 30
+    score = 2
 
     def move(self, world):
         Baddie.move(self, world)
@@ -146,6 +148,21 @@ class World(object):
         self.height = height
         
         self.random = random.Random()
+
+        self.score = 0
+        self.frame = 0
+
+    def max_baddies(self):
+        return self.score // 20 + 2
+
+    def count_baddies(self):
+        return sum(baddie.score for baddie in self.baddies)
+
+    def is_next_to_player(self, x, y):
+        for player in self.players:
+            if (x - player.x)**2 + (y-player.y)**2 < (100 << PRECISION) ** 2:
+                return True
+        return False
 
     def find_bullet(self, obj):
         min_index = 0
@@ -188,6 +205,17 @@ class World(object):
         return None
         
     def advance(self):
+        self.frame += 1
+
+        if self.frame % 50 == 0 and self.max_baddies() > self.count_baddies():
+            baddie = ShootyBaddie()
+            baddie.x = self.random.randint(0, self.width - 1)
+            baddie.y = self.random.randint(0, self.height - 1)
+            while self.is_next_to_player(baddie.x, baddie.y):
+                baddie.x = self.random.randint(0, self.width - 1)
+                baddie.y = self.random.randint(0, self.height - 1)
+            self.baddies.append(baddie)
+
         # destroy any out of range or used bullets
         for i in range(len(self.bullets)-1, -1, -1):
             bullet = self.bullets[i]
@@ -233,6 +261,7 @@ class World(object):
             baddie = self.baddies[i]
             if baddie.dead:
                 self.baddies.pop(i)
+                self.score += baddie.score
 
         # move all the bullets
         for player in self.players:
@@ -309,16 +338,9 @@ def draw_world(world, surface, x, y, w, h):
         color = Color(base_r*opacity/255,base_g*opacity/255,base_b*opacity/255,255)
         pygame.draw.circle(surface, color, (bx, by), br)
 
-def is_next_to_player(world, x, y):
-    for player in world.players:
-        if (x - player.x)**2 + (y-player.y)**2 < (100 << PRECISION) ** 2:
-            return True
-    return False
-
 def run(world, player, x, y, w, h):
     screen = pygame.display.get_surface()
     clock = pygame.time.Clock()
-    frame = 0
     paused = False
     time_dead = 0
 
@@ -327,7 +349,6 @@ def run(world, player, x, y, w, h):
     while True:
         if not paused:
             clock.tick(60)
-            frame += 1
         
         events = pygame.event.get()
         
@@ -358,15 +379,6 @@ def run(world, player, x, y, w, h):
                 player.pull = -player.pull
         
         if not paused:
-            if frame % 200 == 0:
-                baddie = ShootyBaddie()
-                baddie.x = world.random.randint(0, w - 1) << PRECISION
-                baddie.y = world.random.randint(0, h - 1) << PRECISION
-                while is_next_to_player(world, baddie.x, baddie.y):
-                    baddie.x = world.random.randint(0, w - 1) << PRECISION
-                    baddie.y = world.random.randint(0, h - 1) << PRECISION
-                world.baddies.append(baddie)
-            
             world.advance()
 
         draw_world(world, screen, x, y, w, h)
