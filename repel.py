@@ -338,6 +338,12 @@ def draw_world(world, surface, x, y, w, h):
         color = Color(base_r*opacity/255,base_g*opacity/255,base_b*opacity/255,255)
         pygame.draw.circle(surface, color, (bx, by), br)
 
+    if pygame.font:
+        font = pygame.font.Font(None, 48)
+        text = font.render(str(world.score), 1, Color(255, 255, 255, 200))
+        textpos = (0, 0)
+        surface.blit(text, textpos)
+
 def run(world, player, x, y, w, h):
     screen = pygame.display.get_surface()
     clock = pygame.time.Clock()
