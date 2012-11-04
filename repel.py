@@ -226,8 +226,9 @@ class World(object):
 
         if self.frame % 50 == 0 and self.max_baddies() > self.count_baddies():
             baddie = self.make_random_baddie()
-            if baddie.score + self.count_baddies() <= self.max_baddies():
-                self.baddies.append(baddie)
+            while baddie.score > self.max_baddies():
+                baddie = self.make_random_baddie()
+            self.baddies.append(baddie)
 
         # destroy any out of range or used bullets
         for i in range(len(self.bullets)-1, -1, -1):
@@ -383,7 +384,12 @@ def run(world, player, x, y, w, h):
         
         if player.dead:
             time_dead += 1
-            if time_dead == 250:
+            world.bullets[:] = ()
+            world.baddies[:] = ()
+            if time_dead == 25:
+                world.score -= 10
+                if world.score < 0:
+                    world.score = 0
                 time_dead = 0
                 player.dead = False
                 world.players.append(player)
