@@ -89,6 +89,8 @@ class Baddie(Object):
     spawn_time = 0
     age = 0
     score = 1
+    sign = 0
+    shot_speed = 1 << PRECISION
     
     def move(self, world):
         self.age += 1
@@ -124,7 +126,11 @@ class Baddie(Object):
 
 class ShootyBaddie(Baddie):
     spawn_time = 30
-    score = 2
+
+    def __init__(self, sign=0, shot_speed=1):
+        self.sign = sign
+        self.shot_speed = shot_speed * (3 << PRECISION)
+        self.score = (2 if sign == 0 else 1) * (2 if shot_speed != 1 else 1)
 
     def move(self, world):
         Baddie.move(self, world)
@@ -134,9 +140,11 @@ class ShootyBaddie(Baddie):
         
         if self.age % 60 == 0 and world.players:
             player = world.random.choice(world.players)
-            bullet = self.shoot_point(world, player.x, player.y, 5 << PRECISION)
-            bullet.pull = -bullet.pull
-            bullet = self.shoot_point(world, player.x, player.y, 5 << PRECISION)
+            if self.sign != -1:
+                self.shoot_point(world, player.x, player.y, self.shot_speed)
+            if self.sign != 1:
+                bullet = self.shoot_point(world, player.x, player.y, self.shot_speed)
+                bullet.pull = -bullet.pull
 
 class World(object):
     def __init__(self, width, height):
@@ -153,7 +161,7 @@ class World(object):
         self.frame = 0
 
     def max_baddies(self):
-        return self.score // 20 + 2
+        return self.score // 5 + 1
 
     def count_baddies(self):
         return sum(baddie.score for baddie in self.baddies)
@@ -203,18 +211,23 @@ class World(object):
             i += 1
         
         return None
-        
+
+    def make_random_baddie(self):
+        baddie = ShootyBaddie(self.random.randint(-1, 1), self.random.randint(1, 2))
+        baddie.x = self.random.randint(0, self.width - 1)
+        baddie.y = self.random.randint(0, self.height - 1)
+        while self.is_next_to_player(baddie.x, baddie.y):
+            baddie.x = self.random.randint(0, self.width - 1)
+            baddie.y = self.random.randint(0, self.height - 1)
+        return baddie
+
     def advance(self):
         self.frame += 1
 
         if self.frame % 50 == 0 and self.max_baddies() > self.count_baddies():
-            baddie = ShootyBaddie()
-            baddie.x = self.random.randint(0, self.width - 1)
-            baddie.y = self.random.randint(0, self.height - 1)
-            while self.is_next_to_player(baddie.x, baddie.y):
-                baddie.x = self.random.randint(0, self.width - 1)
-                baddie.y = self.random.randint(0, self.height - 1)
-            self.baddies.append(baddie)
+            baddie = self.make_random_baddie()
+            if baddie.score + self.count_baddies() <= self.max_baddies():
+                self.baddies.append(baddie)
 
         # destroy any out of range or used bullets
         for i in range(len(self.bullets)-1, -1, -1):
@@ -331,7 +344,14 @@ def draw_world(world, surface, x, y, w, h):
             opacity = 255 * baddie.age // baddie.spawn_time
         else:
             opacity = 255
-        base_r = base_g = base_b = 162
+        if baddie.sign == 0:
+            base_r = base_g = base_b = 162
+        elif baddie.sign == -1:
+            base_g = base_r = 162
+            base_b = 255
+        elif baddie.sign == 1:
+            base_g = base_b = 162
+            base_r = 255
         bx = baddie.x * w // world.width + x
         by = baddie.y * h // world.height + y
         br = baddie.radius * w // world.width
