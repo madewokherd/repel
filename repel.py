@@ -158,6 +158,7 @@ class World(object):
         self.random = random.Random()
 
         self.score = 0
+        self.top_score = 0
         self.frame = 0
 
     def max_baddies(self):
@@ -299,6 +300,9 @@ class World(object):
         # move all the baddies
         
         pass
+        
+        if self.score > self.top_score:
+            self.top_score = self.score
 
 def draw_world(world, surface, x, y, w, h):
     surface.fill(Color(0,0,0,255), Rect(x, y, w, h))
@@ -362,6 +366,10 @@ def draw_world(world, surface, x, y, w, h):
         font = pygame.font.Font(None, 48)
         text = font.render(str(world.score), 1, Color(255, 255, 255, 200))
         textpos = (0, 0)
+        surface.blit(text, textpos)
+
+        text = font.render(str(world.top_score), 1, Color(255, 255, 255, 200))
+        textpos = (w - text.get_width(), 0)
         surface.blit(text, textpos)
 
 def run(world, player, x, y, w, h):
