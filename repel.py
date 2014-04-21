@@ -162,7 +162,7 @@ class World(object):
         self.frame = 0
 
     def max_baddies(self):
-        return self.score // 5 + 1
+        return min(self.score // 5 + 1, 12)
 
     def count_baddies(self):
         return sum(baddie.score for baddie in self.baddies)
